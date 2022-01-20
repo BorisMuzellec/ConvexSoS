@@ -124,6 +124,50 @@ class PSDRegressor():
         return np.array([(P @ self.B)[i, :, :] @ P[i, :, :].T for i in range(len(P))]).squeeze()
 
 
+# Optimization of a least squares objective
+def loss_func(G, Y, Psi, lbda_1=0, lbda_2=1e-3, grad=True):
+    """
+    Compute the dual loss and its gradient.
+
+    Parameters
+    ----------
+
+    G: (n_fill x d x d) ndarray
+        Dual variable.
+
+    Y: (n x d x d) ndarray
+        Target.
+
+    Psi: (n_fill x (r * d) x d) ndarray
+        Kernel features.
+
+    lbda_1: float, default=1e-3
+        Trace norm regularization factor.
+
+    lbda_2: float, default=1e-3
+        Squared Frobenius norm regularization factor.
+
+    Returns
+    -------
+    loss: float
+        Loss value.
+
+    grad: (n_fill x d x d) ndarray
+        Gradient w.r.t. G.
+    """
+
+    n = len(Y)
+
+    neg_pen, neg_grad = neg_part(G, Psi, lbda_1=lbda_1, grad=True)
+    loss = .5 * (n * (G ** 2).sum() + (G * Y).sum() + neg_pen / lbda_2)
+
+    if grad:
+        grad_ = n * G + Y / 2 + neg_grad / (2 * lbda_2)
+        return loss, grad_
+    else:
+        return loss
+
+
 def neg_part(G, Psi, lbda_1=0, grad=True):
     """
     Returns the squared norm of [-Phi diag(G) Phi.T]_+ and its gradient
@@ -169,50 +213,6 @@ def neg_part(G, Psi, lbda_1=0, grad=True):
             return (vals[:max_idx] ** 2).sum(), grad_
         else:
             return (vals[:max_idx] ** 2).sum()
-
-
-# Optimization of a least squares objective
-def loss_func(G, Y, Psi, lbda_1=0, lbda_2=1e-3, grad=True):
-    """
-    Compute the dual loss and its gradient.
-
-    Parameters
-    ----------
-
-    G: (n_fill x d x d) ndarray
-        Dual variable.
-
-    Y: (n x d x d) ndarray
-        Target.
-
-    Psi: (n_fill x (r * d) x d) ndarray
-        Kernel features.
-
-    lbda_1: float, default=1e-3
-        Trace norm regularization factor.
-
-    lbda_2: float, default=1e-3
-        Squared Frobenius norm regularization factor.
-
-    Returns
-    -------
-    loss: float
-        Loss value.
-
-    grad: (n_fill x d x d) ndarray
-        Gradient w.r.t. G.
-    """
-
-    n = len(Y)
-
-    neg_pen, neg_grad = neg_part(G, Psi, lbda_1=lbda_1, grad=True)
-    loss = .5 * (n * (G ** 2).sum() + (G * Y).sum() + neg_pen / lbda_2)
-
-    if grad:
-        grad_ = n * G + Y / 2 + neg_grad / (2 * lbda_2)
-        return loss, grad_
-    else:
-        return loss
 
 
 def accelerated_gd(Y, Psi, K, lbda_1=0, lbda_2=1e-3, precision=1e-3, max_iter=10000,

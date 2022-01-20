@@ -4,8 +4,7 @@ import scipy.linalg
 import time
 import logging
 
-from psd_utils import kernel_func
-from cvx_utils import make_features, grid, sobol_sample
+from cvx_utils import kernel_func, make_features, grid, sobol_sample
 
 
 class CVXRegressor():

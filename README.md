@@ -1,4 +1,4 @@
-# ConvexSoS
+# Convex and PSD-valued functions using kernel sums of squares
 
 ## Overview
 
